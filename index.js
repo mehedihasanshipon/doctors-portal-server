@@ -4,8 +4,8 @@ require("dotenv").config();
 const cors = require("cors");
 const MongoClient = require("mongodb").MongoClient;
 const fileUpload = require("express-fileupload");
-const fs = require('fs')
-const fse = require('fs-extra')
+const fs = require("fs");
+const fse = require("fs-extra");
 const port = process.env.PORT || 3002;
 
 app.use(cors());
@@ -46,28 +46,45 @@ client.connect((err) => {
 
   app.post("/appointments", (req, res) => {
     const date = req.body;
+    const email = req.body.email;
     console.log(date);
-    appointmentCollection
-      .find({ date: date.date })
-      .toArray((err, documents) => {
-        // console.log(err);
-        res.send(documents);
-      });
+
+    doctorCollection.find({ email: email }).toArray((err, doctors) => {
+      // console.log(err);
+      const filter =  {date: date.date};
+      if (doctors.length === 0) {
+        filter.email = email;
+    }
+      appointmentCollection
+        .find(filter)
+        .toArray((err, documents) => {
+          // console.log(err);
+          res.send(documents);
+        });
+    });
   });
 
-  app.get('/allAppointments', (req, res) => {
-    appointmentCollection.find({})
-        .toArray((err, documents) => {
-            res.send(documents);
-        })
-})
+//   Is doctor
+  app.post('/isDoctor',(req,res)=>{
+    const email = req.body.email;
+    doctorCollection.find({email:email})
+    .toArray((err,doctors)=>{
+        res.send(doctors.length > 0)
+    })
+  })
+
+  app.get("/allAppointments", (req, res) => {
+    appointmentCollection.find({}).toArray((err, documents) => {
+      res.send(documents);
+    });
+  });
 
   // Add doctor
   app.post("/addDoctor", (req, res) => {
     const file = req.files.file;
     const name = req.body.name;
     const email = req.body.email;
-    const filePath = `${__dirname}/doctor/${file.name}`
+    const filePath = `${__dirname}/doctor/${file.name}`;
     // console.log(req.files.file);
     file.mv(filePath, (err) => {
       if (err) {
@@ -75,25 +92,21 @@ client.connect((err) => {
         res.status(500).send({ msg: "Failed to upload image" });
       }
       const newImage = fse.readFileSync(filePath);
-      const encImg = newImage.toString('base64');
+      const encImg = newImage.toString("base64");
 
       const image = {
-          contentType: req.files.file.mimetype,
-          size : req.files.file.size,
+        contentType: req.files.file.mimetype,
+        size: req.files.file.size,
         //   img: Buffer.from(string)
-          img:Buffer.from(encImg,'base64')
-      }
+        img: Buffer.from(encImg, "base64"),
+      };
 
-
-      doctorCollection
-        .insertOne({ name, email,image })
-        .then((result) => {
-        fse.remove(filePath,error=>{
-            if(error)console.log(error);
-            res.send(result.insertedCount > 0);
-        })
-         
+      doctorCollection.insertOne({ name, email, image }).then((result) => {
+        fse.remove(filePath, (error) => {
+          if (error) console.log(error);
+          res.send(result.insertedCount > 0);
         });
+      });
 
       // return res.send({name: file.name,path:`/${file.name}`})
       // console.log(file.name);
