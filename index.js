@@ -4,7 +4,7 @@ require("dotenv").config();
 const cors = require("cors");
 const MongoClient = require("mongodb").MongoClient;
 const fileUpload = require("express-fileupload");
-const fs = require("fs");
+// const fs = require("fs");
 const fse = require("fs-extra");
 const port = process.env.PORT || 3002;
 
@@ -25,10 +25,12 @@ app.get("/", (req, res) => {
   res.send("Hello from Database!");
 });
 
+// Database
+
 client.connect((err) => {
-  const appointmentCollection = client
-    .db("doctorsPortal")
-    .collection("appointment");
+
+  const appointmentCollection = client.db("doctorsPortal").collection("appointment");
+
   const doctorCollection = client.db("doctorsPortal").collection("doctors");
 
   app.post("/addAppointment", (req, res) => {
@@ -85,7 +87,7 @@ client.connect((err) => {
     const name = req.body.name;
     const email = req.body.email;
     const filePath = `${__dirname}/doctor/${file.name}`;
-    // console.log(req.files.file);
+  
     file.mv(filePath, (err) => {
       if (err) {
         console.log(err);
@@ -97,7 +99,7 @@ client.connect((err) => {
       const image = {
         contentType: req.files.file.mimetype,
         size: req.files.file.size,
-        //   img: Buffer.from(string)
+        
         img: Buffer.from(encImg, "base64"),
       };
 
@@ -107,9 +109,6 @@ client.connect((err) => {
           res.send(result.insertedCount > 0);
         });
       });
-
-      // return res.send({name: file.name,path:`/${file.name}`})
-      // console.log(file.name);
     });
   });
 
