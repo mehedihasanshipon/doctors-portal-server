@@ -28,8 +28,9 @@ app.get("/", (req, res) => {
 // Database
 
 client.connect((err) => {
-
-  const appointmentCollection = client.db("doctorsPortal").collection("appointment");
+  const appointmentCollection = client
+    .db("doctorsPortal")
+    .collection("appointment");
 
   const doctorCollection = client.db("doctorsPortal").collection("doctors");
 
@@ -53,27 +54,24 @@ client.connect((err) => {
 
     doctorCollection.find({ email: email }).toArray((err, doctors) => {
       // console.log(err);
-      const filter =  {date: date.date};
+      const filter = { date: date.date };
       if (doctors.length === 0) {
         filter.email = email;
-    }
-      appointmentCollection
-        .find(filter)
-        .toArray((err, documents) => {
-          // console.log(err);
-          res.send(documents);
-        });
+      }
+      appointmentCollection.find(filter).toArray((err, documents) => {
+        // console.log(err);
+        res.send(documents);
+      });
     });
   });
 
-//   Is doctor
-  app.post('/isDoctor',(req,res)=>{
+  //   Is doctor
+  app.post("/isDoctor", (req, res) => {
     const email = req.body.email;
-    doctorCollection.find({email:email})
-    .toArray((err,doctors)=>{
-        res.send(doctors.length > 0)
-    })
-  })
+    doctorCollection.find({ email: email }).toArray((err, doctors) => {
+      res.send(doctors.length > 0);
+    });
+  });
 
   app.get("/allAppointments", (req, res) => {
     appointmentCollection.find({}).toArray((err, documents) => {
@@ -86,30 +84,46 @@ client.connect((err) => {
     const file = req.files.file;
     const name = req.body.name;
     const email = req.body.email;
-    const filePath = `${__dirname}/doctor/${file.name}`;
-  
-    file.mv(filePath, (err) => {
-      if (err) {
-        console.log(err);
-        res.status(500).send({ msg: "Failed to upload image" });
-      }
-      const newImage = fse.readFileSync(filePath);
-      const encImg = newImage.toString("base64");
+    const newImg = file.data;
+    const encImg = newImg.toString("base64");
 
-      const image = {
-        contentType: req.files.file.mimetype,
-        size: req.files.file.size,
-        
-        img: Buffer.from(encImg, "base64"),
-      };
+    console.log(file);
 
-      doctorCollection.insertOne({ name, email, image }).then((result) => {
-        fse.remove(filePath, (error) => {
-          if (error) console.log(error);
-          res.send(result.insertedCount > 0);
-        });
-      });
+    var image = {
+      contentType: file.mimetype,
+      size: file.size,
+      img: Buffer.from(encImg, "base64"),
+    };
+
+    doctorCollection.insertOne({ name, email, image }).then((result) => {
+      res.send(result.insertedCount > 0);
     });
+
+    // const filePath = `${__dirname}/doctor/${file.name}`;
+
+    // file.mv(filePath, (err) => {
+    //   if (err) {
+    //     console.log(err);
+    //     res.status(500).send({ msg: "Failed to upload image" });
+    //   }
+
+    //   const newImage = fse.readFileSync(filePath);
+    //   const encImg = newImage.toString("base64");
+
+    //   const image = {
+    //     contentType: req.files.file.mimetype,
+    //     size: req.files.file.size,
+
+    //     img: Buffer.from(encImg, "base64"),
+    //   };
+
+    //   doctorCollection.insertOne({ name, email, image }).then((result) => {
+    //     fse.remove(filePath, (error) => {
+    //       if (error) console.log(error);
+    //       res.send(result.insertedCount > 0);
+    //     });
+    //   });
+    // });
   });
 
   app.get("/doctors", (rew, res) => {
